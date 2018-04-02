@@ -2,3 +2,11 @@ logging:
   level: INFO
   loggers:
     shapedirection: DEBUG
+
+server:
+  applicationConnectors:
+    - type: http
+      port: 61484
+  adminConnectors:
+    - type: http
+      port: 61485
