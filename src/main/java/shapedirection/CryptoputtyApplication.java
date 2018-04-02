@@ -4,9 +4,9 @@ import io.dropwizard.Application;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 
-public class cryptoputtyApplication extends Application<cryptoputtyConfiguration> {
+public class CryptoputtyApplication extends Application<CryptoputtyConfiguration> {
   public static void main(final String[] args) throws Exception {
-    new cryptoputtyApplication().run(args);
+    new CryptoputtyApplication().run(args);
   }
 
   @Override
@@ -15,12 +15,12 @@ public class cryptoputtyApplication extends Application<cryptoputtyConfiguration
   }
 
   @Override
-  public void initialize(final Bootstrap<cryptoputtyConfiguration> bootstrap) {
+  public void initialize(final Bootstrap<CryptoputtyConfiguration> bootstrap) {
     // TODO: application initialization
   }
 
   @Override
-  public void run(final cryptoputtyConfiguration configuration, final Environment environment) {
+  public void run(final CryptoputtyConfiguration configuration, final Environment environment) {
     // TODO: implement application
   }
 }
