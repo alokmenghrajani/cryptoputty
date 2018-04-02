@@ -12,12 +12,13 @@ import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.UnreadableWalletException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import shapedirection.health.PeerHealth;
 
 import static java.lang.String.format;
 
 public class CryptoputtyApplication extends Application<CryptoputtyConfiguration> {
   private static final Logger log = LoggerFactory.getLogger(CryptoputtyApplication.class);
-  private WalletAppKit kit;
+  public static WalletAppKit kit;
 
   public static void main(final String[] args) throws Exception {
     new CryptoputtyApplication().run(args);
@@ -53,6 +54,6 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
 
   @Override
   public void run(final CryptoputtyConfiguration configuration, final Environment environment) {
-    // TODO: implement application
+    environment.healthChecks().register("peer", new PeerHealth());
   }
 }
