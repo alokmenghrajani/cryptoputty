@@ -45,11 +45,6 @@
       <artifactId>bitcoinj-core</artifactId>
       <version>0.15-SNAPSHOT</version>
     </dependency>
-    <dependency>
-      <groupId>org.bitcoinj</groupId>
-      <artifactId>bitcoinj-core</artifactId>
-      <version>0.15-SNAPSHOT</version>
-    </dependency>
   </dependencies>
 
   <build>
