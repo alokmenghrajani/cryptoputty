@@ -6,9 +6,7 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
 import java.io.File;
-import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.kits.WalletAppKit;
-import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.UnreadableWalletException;
 import org.slf4j.Logger;
@@ -35,15 +33,20 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
   @Override
   public void initialize(final Bootstrap<CryptoputtyConfiguration> bootstrap) {
     bootstrap.addBundle(new ViewBundle<>());
+  }
 
-    NetworkParameters params = TestNet3Params.get();
+  @Override
+  public void run(final CryptoputtyConfiguration configuration, final Environment environment) {
+    environment.healthChecks().register("peer", new PeerHealth());
+    environment.jersey().register(new IndexResource());
+    environment.jersey().register(new PeersResource());
+
+    // Setup WalletAppKit
     File tempDir = Files.createTempDir();
     tempDir.deleteOnExit();
-    kit = new WalletAppKit(params, tempDir, "cryptoputty");
+    kit = new WalletAppKit(configuration.getNetwork(), tempDir, "cryptoputty");
     try {
-      kit.restoreWalletFromSeed(new DeterministicSeed(
-          "office suit release flame robust know depth truly swim bird quality reopen", null, "",
-          1522261414L));
+      kit.restoreWalletFromSeed(new DeterministicSeed(configuration.getTestWallet(), null, "", 1522774271L));
 
       kit.setBlockingStartup(false);
       kit.setAutoSave(true);
@@ -62,14 +65,8 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
     } catch (UnreadableWalletException e) {
       e.printStackTrace();
     }
-  }
 
-  @Override
-  public void run(final CryptoputtyConfiguration configuration, final Environment environment) {
-    environment.healthChecks().register("peer", new PeerHealth());
-    environment.jersey().register(new IndexResource());
-    environment.jersey().register(new PeersResource());
-
+    // Start crawling
     new CrawlerThread().start();
   }
 }

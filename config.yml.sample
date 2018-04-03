@@ -10,3 +10,6 @@ server:
   adminConnectors:
     - type: http
       port: 61485
+
+network: testnet
+testWallet: "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"

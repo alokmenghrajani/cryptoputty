@@ -23,3 +23,7 @@ hs_err_pid*
 
 # intellij
 target/
+
+# config
+config.yml
+
