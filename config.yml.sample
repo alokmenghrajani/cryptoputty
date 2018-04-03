@@ -15,7 +15,10 @@ logging:
   level: INFO
   loggers:
     "org.bitcoinj.core.PeerGroup": WARN
+    "org.bitcoinj.net.ConnectionHandler": ERROR
     "org.bitcoinj.net.NioClientManager": ERROR
+    "org.bitcoinj.core.PeerSocketHandler": ERROR
+    "org.bitcoinj.core.Peer": ERROR
 
 network: testnet
 testWallet: "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"

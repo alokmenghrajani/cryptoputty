@@ -19,6 +19,7 @@ import static java.lang.String.format;
 
 public class CryptoputtyApplication extends Application<CryptoputtyConfiguration> {
   private static final Logger log = LoggerFactory.getLogger(CryptoputtyApplication.class);
+  public static CryptoputtyConfiguration config;
   public static WalletAppKit kit;
 
   public static void main(final String[] args) throws Exception {
@@ -37,6 +38,8 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
 
   @Override
   public void run(final CryptoputtyConfiguration configuration, final Environment environment) {
+    config = configuration;
+
     environment.healthChecks().register("peer", new PeerHealth());
     environment.jersey().register(new IndexResource());
     environment.jersey().register(new PeersResource());
@@ -59,6 +62,8 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
       // I have no idea what I'm doing.
       kit.peerGroup().setMaxPeersToDiscoverCount(configuration.maxPeersToDiscover);
       kit.peerGroup().setMaxConnections(configuration.maxPeersToDiscover);
+
+      kit.peerGroup().addOnTransactionBroadcastListener(new TransactionMutator());
 
       log.info(format("send money to: %s", kit.wallet().freshReceiveAddress().toString()));
       log.info("done initializing");
