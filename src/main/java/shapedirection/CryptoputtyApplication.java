@@ -56,9 +56,9 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
       // Perhaps having bloom filters doesn't hurt since we don't plan to do anything
       // kit.peerGroup().setBloomFilteringEnabled(false);
 
-      // I have no idea what I'm doing, but let's increase these max values.
-      kit.peerGroup().setMaxPeersToDiscoverCount(10000);
-      kit.peerGroup().setMaxConnections(5000);
+      // I have no idea what I'm doing.
+      kit.peerGroup().setMaxPeersToDiscoverCount(configuration.maxPeersToDiscover);
+      kit.peerGroup().setMaxConnections(configuration.maxPeersToDiscover);
 
       log.info(format("send money to: %s", kit.wallet().freshReceiveAddress().toString()));
       log.info("done initializing");

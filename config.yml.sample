@@ -11,5 +11,13 @@ server:
     - type: http
       port: 61485
 
+logging:
+  level: INFO
+  loggers:
+    "org.bitcoinj.core.PeerGroup": WARN
+    "org.bitcoinj.net.NioClientManager": ERROR
+
 network: testnet
 testWallet: "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+maxPeersToDiscover: 100
+maxConnections: 10

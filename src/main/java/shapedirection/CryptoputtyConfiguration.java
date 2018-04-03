@@ -17,6 +17,12 @@ public class CryptoputtyConfiguration extends Configuration {
   @JsonProperty
   private Network network;
 
+  @JsonProperty
+  public int maxPeersToDiscover;
+
+  @JsonProperty
+  public int maxConnections;
+
   public String getTestWallet() {
     return testWallet;
   }
