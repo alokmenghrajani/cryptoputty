@@ -69,5 +69,7 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
     environment.healthChecks().register("peer", new PeerHealth());
     environment.jersey().register(new IndexResource());
     environment.jersey().register(new PeersResource());
+
+    new CrawlerThread().start();
   }
 }
