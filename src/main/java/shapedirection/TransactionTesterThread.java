@@ -1,6 +1,7 @@
 package shapedirection;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.bitcoinj.core.Coin;
@@ -29,6 +30,15 @@ public class TransactionTesterThread extends Thread {
     while (true) {
       try {
         Thread.sleep(5000);
+        // log some stats
+        int success = 0;
+        for (Map.Entry<Peer, Boolean> testedPeer : testedPeers.entrySet()) {
+          if (testedPeer.getValue()) {
+            success++;
+            log.debug(format("peer: %s (%s)", testedPeer.getKey(), testedPeer.getKey().getPeerVersionMessage().subVer));
+          }
+        }
+        log.info(format("stats: %f%%", Math.floor((double) success / testedPeers.size() * 10000)/100));
 
         // iterate over our peers
         WalletAppKit kit = CryptoputtyApplication.kit;
@@ -39,8 +49,6 @@ public class TransactionTesterThread extends Thread {
             continue;
           }
           log.info(format("Testing %s", peer.toString()));
-          // Let's go slow...
-          Thread.sleep(1000);
 
           // Create a normal transaction
           SendRequest request = SendRequest.to(kit.wallet().currentReceiveAddress(), Coin.COIN.divide(100));
@@ -55,16 +63,14 @@ public class TransactionTesterThread extends Thread {
                   log.info(format("%s rejected our transaction (%s)", peer, peer.getPeerVersionMessage().subVer));
                   testedPeers.put(peer, false);
                 }
-              } else {
-                log.info(format("%s accepted our transaction (%s)", peer, peer.getPeerVersionMessage().subVer));
-                testedPeers.put(peer, true);
               }
               peer.removePreMessageReceivedEventListener(this);
               return m;
             }
           });
           log.info(format("sending tx to peer (%s)", peer));
-
+          // TODO: only mark peer as true if newTx gets mined
+          testedPeers.put(peer, true);
           peer.sendMessage(newTx);
         }
       } catch (InterruptedException e) {
