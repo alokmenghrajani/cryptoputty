@@ -52,9 +52,12 @@ public class TransactionTesterThread extends Thread {
               if (m instanceof RejectMessage) {
                 RejectMessage rejectMessage = (RejectMessage)m;
                 if (newTx.getHash().equals(rejectMessage.getRejectedObjectHash())) {
-                  log.info(format("peer (%s) rejected our transaction", peer));
+                  log.info(format("%s rejected our transaction (%s)", peer, peer.getPeerVersionMessage().subVer));
                   testedPeers.put(peer, false);
                 }
+              } else {
+                log.info(format("%s accepted our transaction (%s)", peer, peer.getPeerVersionMessage().subVer));
+                testedPeers.put(peer, true);
               }
               peer.removePreMessageReceivedEventListener(this);
               return m;
