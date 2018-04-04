@@ -15,6 +15,7 @@ logging:
   level: INFO
   loggers:
     "org.bitcoinj.core.PeerGroup": WARN
+    "org.bitcoinj.net.discovery.MultiplexingDiscovery": ERROR
     "org.bitcoinj.net.ConnectionHandler": ERROR
     "org.bitcoinj.net.NioClientManager": ERROR
     "org.bitcoinj.core.PeerSocketHandler": ERROR

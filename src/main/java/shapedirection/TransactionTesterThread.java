@@ -12,6 +12,7 @@ import org.bitcoinj.core.RejectMessage;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.listeners.PreMessageReceivedEventListener;
 import org.bitcoinj.kits.WalletAppKit;
+import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.SendRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,14 +44,14 @@ public class TransactionTesterThread extends Thread {
 
           // Create a normal transaction
           SendRequest request = SendRequest.to(kit.wallet().currentReceiveAddress(), Coin.COIN.divide(100));
-          Transaction tx = kit.wallet().sendCoinsOffline(request);
-          Transaction newTx = TransactionMutator.mutate(tx);
-          peer.addPreMessageReceivedEventListener(new PreMessageReceivedEventListener() {
+          kit.wallet().completeTx(request);
+          Transaction newTx = TransactionMutator.mutate(request.tx);
+          peer.addPreMessageReceivedEventListener(Threading.SAME_THREAD, new PreMessageReceivedEventListener() {
             @Override
             public Message onPreMessageReceived(Peer peer, Message m) {
               if (m instanceof RejectMessage) {
                 RejectMessage rejectMessage = (RejectMessage)m;
-                if (tx.getHash().equals(rejectMessage.getRejectedObjectHash())) {
+                if (newTx.getHash().equals(rejectMessage.getRejectedObjectHash())) {
                   log.info(format("peer (%s) rejected our transaction", peer));
                   testedPeers.put(peer, false);
                 }
