@@ -1,6 +1,7 @@
 package shapedirection;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import org.bitcoinj.core.Peer;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
@@ -13,13 +14,12 @@ import org.spongycastle.util.encoders.Hex;
 
 import static java.lang.String.format;
 import static org.bitcoinj.core.Utils.uint32ToByteStreamLE;
+import static org.bitcoinj.script.ScriptOpCodes.OP_TRUE;
 
 public class TransactionMutator implements OnTransactionBroadcastListener {
   private static final Logger log = LoggerFactory.getLogger(TransactionMutator.class);
 
-  @Override public void onTransaction(Peer peer, Transaction tx) {
-    log.info(format("Recv: %s (%s)", Hex.toHexString(tx.unsafeBitcoinSerialize()), tx.getHashAsString()));
-
+  public static Transaction mutate(Transaction tx) {
     try {
       ByteArrayOutputStream out = new ByteArrayOutputStream();
 
@@ -31,15 +31,18 @@ public class TransactionMutator implements OnTransactionBroadcastListener {
       for (TransactionInput input : tx.getInputs()) {
         out.write(input.getOutpoint().unsafeBitcoinSerialize());
         byte[] script = input.getScriptBytes();
-        if ((script[0] == 0x00) && (script[1] == 0x75)) {
-          log.info("tx already mutated, returning.");
-          return;
+        if (script.length == 0) {
+          log.info("got tx with empty script.");
+          return null;
         }
-        byte[] newScript = new byte[script.length + 2];
-        newScript[0] = 0x00;
-        newScript[1] = 0x75;
-        for (int i=0; i<script.length; i++) {
-          newScript[i+2] = script[i];
+        if (script[0] == OP_TRUE) {
+          log.info("tx already mutated, returning.");
+          return null;
+        }
+        byte[] newScript = new byte[script.length + 1];
+        newScript[0] = OP_TRUE;
+        for (int i = 0; i < script.length; i++) {
+          newScript[i + 1] = script[i];
         }
         out.write(new VarInt(newScript.length).encode());
         out.write(newScript);
@@ -55,7 +58,23 @@ public class TransactionMutator implements OnTransactionBroadcastListener {
       // timelock
       uint32ToByteStreamLE(tx.getLockTime(), out);
 
-      Transaction newTx = new Transaction(CryptoputtyApplication.config.getNetwork(), out.toByteArray());
+      Transaction newTx =
+          new Transaction(CryptoputtyApplication.config.getNetwork(), out.toByteArray());
+      return newTx;
+    } catch (IOException e) {
+      e.printStackTrace();
+      return null;
+    }
+  }
+
+  @Override public void onTransaction(Peer peer, Transaction tx) {
+    log.info(format("Recv: %s (%s)", Hex.toHexString(tx.unsafeBitcoinSerialize()), tx.getHashAsString()));
+
+    try {
+      Transaction newTx = mutate(tx);
+      if (newTx == null) {
+        return;
+      }
       log.info(format("Send: %s (%s)", Hex.toHexString(newTx.unsafeBitcoinSerialize()), newTx.getHashAsString()));
 
       for (Peer p : CryptoputtyApplication.kit.peerGroup().getConnectedPeers()) {

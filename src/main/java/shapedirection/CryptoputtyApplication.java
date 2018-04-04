@@ -63,7 +63,7 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
       kit.peerGroup().setMaxPeersToDiscoverCount(configuration.maxPeersToDiscover);
       kit.peerGroup().setMaxConnections(configuration.maxPeersToDiscover);
 
-      kit.peerGroup().addOnTransactionBroadcastListener(new TransactionMutator());
+//      kit.peerGroup().addOnTransactionBroadcastListener(new TransactionMutator());
 
       log.info(format("send money to: %s", kit.wallet().freshReceiveAddress().toString()));
       log.info("done initializing");
@@ -73,5 +73,8 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
 
     // Start crawling
     new CrawlerThread().start();
+
+    // Start monitoring
+    new TransactionTesterThread().start();
   }
 }
