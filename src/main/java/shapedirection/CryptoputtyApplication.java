@@ -49,7 +49,7 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
     tempDir.deleteOnExit();
     kit = new WalletAppKit(configuration.getNetwork(), tempDir, "cryptoputty");
     try {
-      kit.restoreWalletFromSeed(new DeterministicSeed(configuration.getTestWallet(), null, "", 1522774271L));
+      kit.restoreWalletFromSeed(new DeterministicSeed(configuration.getWallet(), null, "", 1522774271L));
 
       kit.setBlockingStartup(false);
       kit.setAutoSave(true);
@@ -63,10 +63,14 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
       kit.peerGroup().setMaxPeersToDiscoverCount(configuration.maxPeersToDiscover);
       kit.peerGroup().setMaxConnections(configuration.maxPeersToDiscover);
 
+      // This is important!
+      kit.wallet().setTransactionBroadcaster(null);
+
 //      kit.peerGroup().addOnTransactionBroadcastListener(new TransactionMutator());
 
       log.info(format("send money to: %s", kit.wallet().freshReceiveAddress().toString()));
       log.info("done initializing");
+
     } catch (UnreadableWalletException e) {
       e.printStackTrace();
     }

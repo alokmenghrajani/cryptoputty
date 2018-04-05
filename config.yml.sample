@@ -14,6 +14,7 @@ server:
 logging:
   level: INFO
   loggers:
+    "shapedirection": DEBUG
     "org.bitcoinj.core.PeerGroup": WARN
     "org.bitcoinj.net.discovery.MultiplexingDiscovery": ERROR
     "org.bitcoinj.net.ConnectionHandler": ERROR
@@ -22,6 +23,7 @@ logging:
     "org.bitcoinj.core.Peer": ERROR
 
 network: testnet
-testWallet: "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+wallet: "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+
 maxPeersToDiscover: 100
 maxConnections: 10

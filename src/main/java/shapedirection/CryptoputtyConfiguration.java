@@ -12,7 +12,7 @@ import static java.lang.String.format;
 public class CryptoputtyConfiguration extends Configuration {
   @NotEmpty
   @JsonProperty
-  private String testWallet;
+  private String wallet;
 
   @JsonProperty
   private Network network;
@@ -23,8 +23,8 @@ public class CryptoputtyConfiguration extends Configuration {
   @JsonProperty
   public int maxConnections;
 
-  public String getTestWallet() {
-    return testWallet;
+  public String getWallet() {
+    return wallet;
   }
 
   public NetworkParameters getNetwork() {

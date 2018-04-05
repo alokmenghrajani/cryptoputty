@@ -14,12 +14,13 @@ import org.spongycastle.util.encoders.Hex;
 
 import static java.lang.String.format;
 import static org.bitcoinj.core.Utils.uint32ToByteStreamLE;
-import static org.bitcoinj.script.ScriptOpCodes.OP_TRUE;
+import static org.bitcoinj.script.ScriptOpCodes.OP_0;
+import static org.bitcoinj.script.ScriptOpCodes.OP_DROP;
 
 public class TransactionMutator implements OnTransactionBroadcastListener {
   private static final Logger log = LoggerFactory.getLogger(TransactionMutator.class);
 
-  public static Transaction mutate(Transaction tx) {
+  public static Transaction mutate(Transaction tx, boolean invalidSignature) {
     try {
       ByteArrayOutputStream out = new ByteArrayOutputStream();
 
@@ -28,6 +29,7 @@ public class TransactionMutator implements OnTransactionBroadcastListener {
 
       // inputs
       out.write(tx.getInputs().size());
+      boolean first = true;
       for (TransactionInput input : tx.getInputs()) {
         out.write(input.getOutpoint().unsafeBitcoinSerialize());
         byte[] script = input.getScriptBytes();
@@ -35,18 +37,27 @@ public class TransactionMutator implements OnTransactionBroadcastListener {
           log.info("got tx with empty script.");
           return null;
         }
-        if (script[0] == OP_TRUE) {
+        if (script[0] == OP_0) {
           log.info("tx already mutated, returning.");
           return null;
         }
-        byte[] newScript = new byte[script.length + 1];
-        newScript[0] = OP_TRUE;
+        byte[] newScript = new byte[script.length + 2];
+        newScript[0] = OP_0;
+        newScript[1] = OP_DROP;
         for (int i = 0; i < script.length; i++) {
-          newScript[i + 1] = script[i];
+          newScript[i + 2] = script[i];
+          if (invalidSignature && !first && (i == 5)) {
+            if (script[i] == 0x22) {
+              newScript[i + 2] = 0x23;
+            } else {
+              newScript[i + 2] = 0x22;
+            }
+          }
         }
         out.write(new VarInt(newScript.length).encode());
         out.write(newScript);
         uint32ToByteStreamLE(input.getSequenceNumber(), out);
+        first = false;
       }
 
       // outputs
@@ -71,7 +82,7 @@ public class TransactionMutator implements OnTransactionBroadcastListener {
     log.info(format("Recv: %s (%s)", Hex.toHexString(tx.unsafeBitcoinSerialize()), tx.getHashAsString()));
 
     try {
-      Transaction newTx = mutate(tx);
+      Transaction newTx = mutate(tx, false);
       if (newTx == null) {
         return;
       }
