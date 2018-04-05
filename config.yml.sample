@@ -24,3 +24,60 @@ network: testnet
 testWallet: "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
 maxPeersToDiscover: 100
 maxConnections: 10
+
+database:
+  # the name of your JDBC driver
+  driverClass: com.mysql.jdbc.Driver
+
+  # the username
+  user: root
+
+  # the password
+  password: ''
+
+  # the JDBC URL
+  url: jdbc:mysql://localhost:3306/cryptoputty
+
+  # any properties specific to your JDBC driver:
+  properties: {}
+
+  # the maximum amount of time to wait on an empty pool before throwing an exception
+  maxWaitForConnection: 1s
+
+  # the SQL query to run when validating a connection's liveness
+  validationQuery: "/* Cryptoputty Health Check */ SELECT 1"
+
+  # the minimum number of connections to keep open
+  minSize: 8
+
+  # the maximum number of connections to keep open
+  maxSize: 32
+
+  # whether or not idle connections should be validated
+  checkConnectionWhileIdle: false
+
+jooq:
+  # The flavor of SQL to generate. If not specified, it will be inferred from the JDBC connection URL.  (default: null)
+  dialect: MYSQL
+  # DEPRECATED: Use `executeLogging` instead (default: no)
+  logExecutedSql: yes
+  # Whether to include schema names in generated SQL.  (default: yes)
+  renderSchema: yes
+  # How names should be rendered in generated SQL.  One of QUOTED, AS_IS, LOWER, or UPPER.  (default: QUOTED)
+  renderNameStyle: QUOTED
+  # How keywords should be rendered in generated SQL.  One of LOWER, UPPER.  (default: UPPER)
+  renderKeywordStyle: UPPER
+  # Whether generated SQL should be pretty-printed.  (default: no)
+  renderFormatted: no
+  # How parameters should be represented.  One of INDEXED, NAMED, or INLINE.  (default: INDEXED)
+  paramType: INDEXED
+  # How statements should be generated; one of PREPARED_STATEMENT or STATIC_STATEMENT.  (default: PREPARED_STATEMENT)
+  statementType: PREPARED_STATEMENT
+  # Whether internal jOOQ logging should be enabled.  (default: no)
+  executeLogging: no
+  # Whether optimistic locking should be enabled.  (default: no)
+  executeWithOptimisticLocking: no
+  # Whether returned records should be 'attached' to the jOOQ context.  (default: yes)
+  attachRecords: yes
+  # Whether primary-key fields should be updatable.  (default: no)
+  updatablePrimaryKeys: no

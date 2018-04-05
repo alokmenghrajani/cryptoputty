@@ -51,6 +51,34 @@
       <artifactId>bitcoinj-core</artifactId>
       <version>0.15-SNAPSHOT</version>
     </dependency>
+    <!-- https://mvnrepository.com/artifact/com.bendb.dropwizard/dropwizard-jooq -->
+    <dependency>
+      <groupId>com.bendb.dropwizard</groupId>
+      <artifactId>dropwizard-jooq</artifactId>
+      <version>1.2.0-0</version>
+    </dependency>
+    <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>5.1.6</version>
+    </dependency>
+    <!-- http://www.jooq.org/doc/3.10/manual-single-page/ -->
+    <dependency>
+      <groupId>org.jooq</groupId>
+      <artifactId>jooq</artifactId>
+      <version>3.10.6</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jooq</groupId>
+      <artifactId>jooq-meta</artifactId>
+      <version>3.10.6</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jooq</groupId>
+      <artifactId>jooq-codegen</artifactId>
+      <version>3.10.6</version>
+    </dependency>
   </dependencies>
 
   <build>

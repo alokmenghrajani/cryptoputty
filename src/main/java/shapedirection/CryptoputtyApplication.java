@@ -1,7 +1,10 @@
 package shapedirection;
 
+import com.bendb.dropwizard.jooq.JooqBundle;
+import com.bendb.dropwizard.jooq.JooqFactory;
 import com.google.common.io.Files;
 import io.dropwizard.Application;
+import io.dropwizard.db.PooledDataSourceFactory;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import io.dropwizard.views.ViewBundle;
@@ -14,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import shapedirection.health.PeerHealth;
 import shapedirection.resources.IndexResource;
 import shapedirection.resources.PeersResource;
+import shapedirection.resources.JooqExampleResource;
 
 import static java.lang.String.format;
 
@@ -21,6 +25,18 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
   private static final Logger log = LoggerFactory.getLogger(CryptoputtyApplication.class);
   public static CryptoputtyConfiguration config;
   public static WalletAppKit kit;
+  private final JooqBundle<CryptoputtyConfiguration> jooq =
+      new JooqBundle<CryptoputtyConfiguration>() {
+        @Override public PooledDataSourceFactory getDataSourceFactory(
+            CryptoputtyConfiguration configuration) {
+          return configuration.getDataSourceFactory();
+        }
+
+        @Override
+        public JooqFactory getJooqFactory(CryptoputtyConfiguration configuration) {
+          return configuration.getJooqFactory();
+        }
+      };
 
   public static void main(final String[] args) throws Exception {
     new CryptoputtyApplication().run(args);
@@ -34,6 +50,7 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
   @Override
   public void initialize(final Bootstrap<CryptoputtyConfiguration> bootstrap) {
     bootstrap.addBundle(new ViewBundle<>());
+    bootstrap.addBundle(jooq);
   }
 
   @Override
@@ -43,6 +60,7 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
     environment.healthChecks().register("peer", new PeerHealth());
     environment.jersey().register(new IndexResource());
     environment.jersey().register(new PeersResource());
+    environment.jersey().register(new JooqExampleResource());
 
     // Setup WalletAppKit
     File tempDir = Files.createTempDir();
