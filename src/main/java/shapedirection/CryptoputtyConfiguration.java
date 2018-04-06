@@ -30,7 +30,8 @@ public class CryptoputtyConfiguration extends Configuration {
   public NetworkParameters getNetwork() {
     switch (network) {
       case TESTNET:
-        return TestNet3Params.get();
+        TestNet3Params testNet3Params = TestNet3Params.get();
+        return testNet3Params;
       case MAINNET:
         return MainNetParams.get();
       default:

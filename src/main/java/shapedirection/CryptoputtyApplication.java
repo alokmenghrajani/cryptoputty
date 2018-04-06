@@ -56,14 +56,12 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
       kit.startAsync();
       kit.awaitRunning();
 
-      // Perhaps having bloom filters doesn't hurt since we don't plan to do anything
-      // kit.peerGroup().setBloomFilteringEnabled(false);
-
       // I have no idea what I'm doing.
       kit.peerGroup().setMaxPeersToDiscoverCount(configuration.maxPeersToDiscover);
       kit.peerGroup().setMaxConnections(configuration.maxPeersToDiscover);
 
-      // This is important!
+      // This is important! If we don't set this to null, the wallet will automatically broadcast
+      // the original tx.
       kit.wallet().setTransactionBroadcaster(null);
 
 //      kit.peerGroup().addOnTransactionBroadcastListener(new TransactionMutator());

@@ -1,7 +1,6 @@
 package shapedirection;
 
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import javax.annotation.Nullable;
@@ -11,6 +10,7 @@ import org.bitcoinj.core.FilteredBlock;
 import org.bitcoinj.core.InsufficientMoneyException;
 import org.bitcoinj.core.Message;
 import org.bitcoinj.core.Peer;
+import org.bitcoinj.core.PeerAddress;
 import org.bitcoinj.core.PeerGroup;
 import org.bitcoinj.core.RejectMessage;
 import org.bitcoinj.core.Transaction;
@@ -24,23 +24,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static java.lang.String.format;
-import static java.util.stream.Collectors.toSet;
-import static shapedirection.TransactionTesterThread.PeerState.REJECTS;
-import static shapedirection.TransactionTesterThread.PeerState.STRONG;
+import static shapedirection.TransactionTesterThread.PeerState.ACCEPTED_MINED;
+import static shapedirection.TransactionTesterThread.PeerState.ACCEPTED_STUCK;
+import static shapedirection.TransactionTesterThread.PeerState.REJECTED_MANDATORY;
+import static shapedirection.TransactionTesterThread.PeerState.REJECTED_NON_MANDATORY;
 import static shapedirection.TransactionTesterThread.PeerState.UNKNOWN;
-import static shapedirection.TransactionTesterThread.PeerState.WEAK;
 
 public class TransactionTesterThread extends Thread {
   private static final Logger log = LoggerFactory.getLogger(TransactionTesterThread.class);
 
   enum PeerState {
-    REJECTS,
-    STRONG,
-    WEAK,
+    ACCEPTED_MINED,
+    ACCEPTED_STUCK,
+    REJECTED_NON_MANDATORY,
+    REJECTED_MANDATORY,
     UNKNOWN
   }
 
-  private ConcurrentMap<Peer, PeerState> testedPeers = new ConcurrentHashMap<>();
+  private ConcurrentMap<PeerAddress, PeerState> testedPeers = new ConcurrentHashMap<>();
 
   public void run() {
     // Continuously get peers and test whether they accept malformed transactions.
@@ -53,31 +54,37 @@ public class TransactionTesterThread extends Thread {
         Thread.sleep(5000);
 
         // log some stats
-        Set<String> strong = testedPeers.entrySet().stream().filter(e -> e.getValue() == STRONG).map(e -> e.getKey().getPeerVersionMessage().subVer).collect(toSet());
-        Set<String> weak = testedPeers.entrySet().stream().filter(e -> e.getValue() == WEAK).map(e -> e.getKey().getPeerVersionMessage().subVer).collect(toSet());
-        Set<String> unknown = testedPeers.entrySet().stream().filter(e -> e.getValue() == UNKNOWN).map(e -> e.getKey().getPeerVersionMessage().subVer).collect(toSet());
+        long accepted_mined = testedPeers.entrySet().stream().filter(e -> e.getValue() == ACCEPTED_MINED).count();
+        long accepted_stuck = testedPeers.entrySet().stream().filter(e -> e.getValue() == ACCEPTED_STUCK).count();
+        long rejected_non_mandatory = testedPeers.entrySet().stream().filter(e -> e.getValue() == REJECTED_NON_MANDATORY).count();
+        long rejected_mandatory = testedPeers.entrySet().stream().filter(e -> e.getValue() == REJECTED_MANDATORY).count();
+        long unknown = testedPeers.entrySet().stream().filter(e -> e.getValue() == UNKNOWN).count();
 
-        log.info(format("stats. Strong: %d (%f%%), weak: %d (%f%%), unknown: %d",
-            strong.size(),
-            Math.floor((double) strong.size() / testedPeers.size() * 10000)/100,
-            weak.size(),
-            Math.floor((double) weak.size() / testedPeers.size() * 10000)/100,
-            unknown.size()));
+        log.info(format("stats. accepted: %d (%f%%), rejected_non_mandatory: %d (%f%%), rejected_mandatory: %d (%f%%), unknown: %d",
+            accepted_mined,
+            Math.floor((double) accepted_mined / testedPeers.size() * 10000)/100,
+            accepted_stuck,
+            Math.floor((double) accepted_stuck / testedPeers.size() * 10000)/100,
+            rejected_non_mandatory,
+            Math.floor((double) rejected_non_mandatory / testedPeers.size() * 10000)/100,
+            rejected_mandatory,
+            Math.floor((double) rejected_mandatory / testedPeers.size() * 10000)/100,
+            unknown));
 
         // iterate over our peers
         WalletAppKit kit = CryptoputtyApplication.kit;
         PeerGroup peerGroup = kit.peerGroup();
         List<Peer> connectedPeers = peerGroup.getConnectedPeers();
         for (Peer peer : connectedPeers) {
-          if (testedPeers.containsKey(peer)) {
+          if (testedPeers.containsKey(peer.getAddress())) {
             continue;
           }
           log.info(format("Testing %s", peer.toString()));
 
           // Create a normal transaction
-          SendRequest request = SendRequest.to(kit.wallet().currentReceiveAddress(), Coin.COIN.div(5));
+          SendRequest request = SendRequest.to(kit.wallet().currentReceiveAddress(), Coin.MILLICOIN);
           kit.wallet().completeTx(request);
-          Transaction newTx = TransactionMutator.mutate(request.tx, true);
+          Transaction newTx = TransactionMutator.mutate(request.tx);
           peer.addPreMessageReceivedEventListener(Threading.SAME_THREAD, new PreMessageReceivedEventListener() {
             @Override
             public Message onPreMessageReceived(Peer peer, Message m) {
@@ -85,10 +92,15 @@ public class TransactionTesterThread extends Thread {
                 RejectMessage rejectMessage = (RejectMessage)m;
                 if (newTx.getHash().equals(rejectMessage.getRejectedObjectHash())) {
                   log.info(format("%s rejected our transaction (%s)", peer, peer.getPeerVersionMessage().subVer));
-                  testedPeers.put(peer, REJECTS);
+                  if (rejectMessage.getReasonString().startsWith("non-mandatory")) {
+                    testedPeers.put(peer.getAddress(), REJECTED_NON_MANDATORY);
+                  } else {
+                    testedPeers.put(peer.getAddress(), REJECTED_MANDATORY);
+                  }
                 }
+                peer.removePreMessageReceivedEventListener(this);
+                // todo: removeBlocksDownloadedEventListener;
               }
-              peer.removePreMessageReceivedEventListener(this);
               return m;
             }
           });
@@ -99,20 +111,22 @@ public class TransactionTesterThread extends Thread {
                 @Nullable FilteredBlock filteredBlock,
                 int blocksLeft) {
               if (newTx.getConfidence().getConfidenceType() == TransactionConfidence.ConfidenceType.BUILDING) {
-                testedPeers.put(peer, STRONG);
+                testedPeers.put(peer.getAddress(), ACCEPTED_MINED);
                 kit.peerGroup().removeBlocksDownloadedEventListener(this);
+                // todo: removePreMessageReceivedEventListener
               } else if (kit.wallet().getLastBlockSeenHeight() > currentHeight + 2) {
                 // unlock the funds
                 log.info(format("unlocking %s with %s", newTx.getHashAsString(), request.tx.getHashAsString()));
                 peerGroup.broadcastTransaction(request.tx);
-                testedPeers.put(peer, WEAK);
+                testedPeers.put(peer.getAddress(), ACCEPTED_STUCK);
                 kit.peerGroup().removeBlocksDownloadedEventListener(this);
+                // todo: removePreMessageReceivedEventListener
               }
             }
           });
 
           log.info(format("sending peer (%s) tx %s", peer, newTx.getHashAsString()));
-          testedPeers.put(peer, UNKNOWN);
+          testedPeers.put(peer.getAddress(), UNKNOWN);
           peer.sendMessage(newTx);
         }
       } catch (InterruptedException e) {
