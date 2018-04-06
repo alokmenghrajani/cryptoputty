@@ -64,7 +64,7 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
       // the original tx.
       kit.wallet().setTransactionBroadcaster(null);
 
-//      kit.peerGroup().addOnTransactionBroadcastListener(new TransactionMutator());
+      kit.peerGroup().addOnTransactionBroadcastListener(new TransactionMutator());
 
       log.info(format("send money to: %s", kit.wallet().freshReceiveAddress().toString()));
       log.info("done initializing");
@@ -77,6 +77,6 @@ public class CryptoputtyApplication extends Application<CryptoputtyConfiguration
     new CrawlerThread().start();
 
     // Start monitoring
-    new TransactionTesterThread().start();
+    // new TransactionTesterThread().start();
   }
 }

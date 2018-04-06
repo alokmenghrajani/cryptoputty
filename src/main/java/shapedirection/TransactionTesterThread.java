@@ -60,7 +60,7 @@ public class TransactionTesterThread extends Thread {
         long rejected_mandatory = testedPeers.entrySet().stream().filter(e -> e.getValue() == REJECTED_MANDATORY).count();
         long unknown = testedPeers.entrySet().stream().filter(e -> e.getValue() == UNKNOWN).count();
 
-        log.info(format("stats. accepted: %d (%f%%), rejected_non_mandatory: %d (%f%%), rejected_mandatory: %d (%f%%), unknown: %d",
+        log.info(format("stats: accepted_mined: %d (%f%%), accepted_stuck: %d (%f%%), rejected_non_mandatory: %d (%f%%), rejected_mandatory: %d (%f%%), unknown: %d",
             accepted_mined,
             Math.floor((double) accepted_mined / testedPeers.size() * 10000)/100,
             accepted_stuck,
@@ -91,7 +91,11 @@ public class TransactionTesterThread extends Thread {
               if (m instanceof RejectMessage) {
                 RejectMessage rejectMessage = (RejectMessage)m;
                 if (newTx.getHash().equals(rejectMessage.getRejectedObjectHash())) {
-                  log.info(format("%s rejected our transaction (%s)", peer, peer.getPeerVersionMessage().subVer));
+                  log.info(format("%s rejected our transaction (%s) with message %s - %s",
+                      peer,
+                      peer.getPeerVersionMessage().subVer,
+                      rejectMessage.getReasonString(),
+                      rejectMessage.getRejectedMessage()));
                   if (rejectMessage.getReasonString().startsWith("non-mandatory")) {
                     testedPeers.put(peer.getAddress(), REJECTED_NON_MANDATORY);
                   } else {
